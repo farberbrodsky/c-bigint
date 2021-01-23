@@ -18,3 +18,4 @@ BigInt BigInt_from_binary_string(char *);
 BigInt BigInt_add(BigInt, BigInt);
 BigInt BigInt_sub(BigInt, BigInt);
 BigInt BigInt_shiftleft(BigInt, ssize_t);
+BigInt BigInt_mul(BigInt, BigInt);

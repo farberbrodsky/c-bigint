@@ -1,10 +1,31 @@
 #include "BigInt.h"
+#include <stdio.h>
 #ifndef max
 #define max(a,b) (((a) > (b)) ? a : b)
 #endif
 
 void BigInt_free(BigInt x) {
   free(x.digits);
+}
+
+void BigInt_shrink(BigInt *x) {
+  // removes pre-trailing zeroes
+  for (ssize_t i = 0; i < x->len; i++) {
+    if (x->digits[i] != 0) {
+      // found non-zero, remove everything before it
+      if (i != 0) {
+        x->len = x->len - i;
+        memmove(x->digits, x->digits + i, x->len * sizeof(u32));
+        x->digits = realloc(x->digits, x->len * sizeof(u32));
+      }
+      return;
+    }
+  }
+  // only zeroes
+  free(x->digits);
+  x->len = 1;
+  x->digits = malloc(sizeof(u32));
+  x->digits[0] = 0;
 }
 
 BigInt BigInt_clone(BigInt x) {
@@ -66,6 +87,7 @@ BigInt BigInt_from_binary_string(char *s) {
       current_digit_digit = 1;
     }
   }
+  BigInt_shrink(&x);
   return x;
 }
 
@@ -108,6 +130,7 @@ BigInt BigInt_add(BigInt x, BigInt y) {
       z.digits[z.len - i - 1] = b;
     }
   }
+  BigInt_shrink(&z);
   return z;
 }
 
@@ -161,6 +184,7 @@ BigInt BigInt_sub(BigInt x, BigInt y) {
       }
     }
   }
+  BigInt_shrink(&z);
   return z;
 }
 
@@ -176,5 +200,16 @@ BigInt BigInt_shiftleft(BigInt x, ssize_t shift) {
     y.digits[i + between_shift] = (x.digits[i] << inner_shift) + (x.digits[i + 1] >> (32 - inner_shift));
   }
   y.digits[between_shift + x.len - 1] = x.digits[x.len - 1] << inner_shift;
+  BigInt_shrink(&y);
   return y;
+}
+
+BigInt BigInt_mul(BigInt x, BigInt y) {
+  BigInt z;
+  z.sign = x.sign == y.sign;
+  z.len = x.len + y.len;
+  z.digits = malloc(z.len * sizeof(u32));
+  memset(z.digits, 0, z.len * sizeof(u32));
+  BigInt_shrink(&z);
+  return z;
 }
