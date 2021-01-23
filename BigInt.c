@@ -154,6 +154,38 @@ BigInt BigInt_from_binary_string(char *s) {
   return x;
 }
 
+BigInt BigInt_from_decimal_string(char *s) {
+  BigInt ten;
+  ten.sign = true;
+  ten.len = 1;
+  ten.digits = malloc(sizeof(u32));
+  ten.digits[0] = 10;
+
+  bool sign = true;
+
+  BigInt x = BigInt_zero();
+  for (char *c = s; *c != '\0'; ++c) {
+    if (*c == '-') {
+      sign = false;
+    } else {
+      u32 digit = *c - '0';
+      BigInt b;
+      b.sign = true;
+      b.len = 1;
+      b.digits = &digit;
+
+      BigInt next_x = BigInt_mul(x, ten);
+      BigInt next_next_x = BigInt_add(next_x, b);
+      BigInt_free(next_x);
+      BigInt_free(x);
+      x = next_next_x;
+    }
+  }
+  
+  x.sign = sign;
+  return x;
+}
+
 BigInt BigInt_add(BigInt x, BigInt y) {
   // if one of them is negative and the other isn't, this is subtraction
   if (x.sign != y.sign) {
