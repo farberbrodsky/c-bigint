@@ -13,6 +13,7 @@ struct {
 
 void BigInt_free(BigInt);
 BigInt BigInt_clone(BigInt);
-char *BigInt_to_binary_string(BigInt);
+char  *BigInt_to_binary_string(BigInt);
+BigInt BigInt_from_binary_string(char *);
 BigInt BigInt_add(BigInt x, BigInt y);
 BigInt BigInt_sub(BigInt x, BigInt y);

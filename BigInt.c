@@ -43,6 +43,32 @@ char *BigInt_to_binary_string(BigInt x) {
   return result;
 }
 
+BigInt BigInt_from_binary_string(char *s) {
+  BigInt x;
+  x.sign = true;
+  x.len = 1 + strlen(s) / 32;
+  x.digits = malloc(x.len * sizeof(u32));
+  memset(x.digits, 0, x.len * sizeof(u32));
+
+  ssize_t current_digit = x.len - 1;
+  u32 current_digit_digit = 1;
+  for (char *c = s + strlen(s) - 1; c != s - 1; --c) {
+    if (*c == '-') {
+      x.sign = false;
+    } else if (*c == '0') {
+      current_digit_digit <<= 1;
+    } else if (*c == '1') {
+      x.digits[current_digit] |= current_digit_digit;
+      current_digit_digit <<= 1;
+    }
+    if (current_digit_digit == 0) {
+      current_digit--;
+      current_digit_digit = 1;
+    }
+  }
+  return x;
+}
+
 BigInt BigInt_add(BigInt x, BigInt y) {
   // if one of them is negative and the other isn't, this is subtraction
   if (y.sign && !x.sign) {
@@ -87,5 +113,27 @@ BigInt BigInt_add(BigInt x, BigInt y) {
 }
 
 BigInt BigInt_sub(BigInt x, BigInt y) {
-  return x;
+  BigInt z;
+  z.len = max(x.len, y.len);
+  // z.sign is not decided yet
+  z.digits = malloc(z.len * sizeof(u32));
+  memset(z.digits, 0, z.len * sizeof(u32));
+  bool carry = false;
+  for (ssize_t i = z.len - 1; i >= 0; --i) {
+    u32 a = 0, b = 0;
+    if (i < x.len) {
+      a = x.digits[x.len - i - 1];
+    }
+    if (i < y.len) {
+      b = y.digits[y.len - i - 1];
+    }
+    u32 c = a - b;
+    if (c <= a) {
+      // no overflow
+      z.digits[z.len - i - 1] = c;
+    } else {
+      // take 1 from the next...
+    }
+  }
+  return z;
 }
