@@ -12,6 +12,7 @@ struct {
 } typedef BigInt;
 
 void BigInt_free(BigInt);
+void BigInt_shrink(BigInt *);
 BigInt BigInt_clone(BigInt);
 char  *BigInt_to_binary_string(BigInt);
 BigInt BigInt_from_binary_string(char *);
