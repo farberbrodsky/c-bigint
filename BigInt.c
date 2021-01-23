@@ -71,9 +71,8 @@ BigInt BigInt_from_binary_string(char *s) {
 
 BigInt BigInt_add(BigInt x, BigInt y) {
   // if one of them is negative and the other isn't, this is subtraction
-  if (y.sign && !x.sign) {
-    return BigInt_sub(y, x);
-  } else if (x.sign && !y.sign) {
+  if (x.sign != y.sign) {
+    y.sign = !y.sign;
     return BigInt_sub(x, y);
   }
   // make sure x.len >= y.len
@@ -113,16 +112,24 @@ BigInt BigInt_add(BigInt x, BigInt y) {
 }
 
 BigInt BigInt_sub(BigInt x, BigInt y) {
-  BigInt z;
-  z.len = max(x.len, y.len);
-  // z.sign is not decided yet
-  z.digits = malloc(z.len * sizeof(u32));
-  memset(z.digits, 0, z.len * sizeof(u32));
-  bool carry = false;
-  for (ssize_t i = z.len - 1; i >= 0; --i) {
+  // if the signs are opposite, this is addition
+  if (x.sign != y.sign) {
+    y.sign = !y.sign;
+    return BigInt_add(x, y);
+  }
+  // make sure x.len >= y.len
+  if (y.len > x.len) {
+    BigInt z = BigInt_sub(y, x);
+    z.sign = !z.sign;
+    return z;
+  }
+  // copy x with extra zeroes before it
+  BigInt z = BigInt_clone(x);
+  // start subtraction
+  for (ssize_t i = 0; i < z.len; i++) {
     u32 a = 0, b = 0;
-    if (i < x.len) {
-      a = x.digits[x.len - i - 1];
+    if (i < z.len) {
+      a = z.digits[z.len - i - 1];
     }
     if (i < y.len) {
       b = y.digits[y.len - i - 1];
@@ -132,7 +139,25 @@ BigInt BigInt_sub(BigInt x, BigInt y) {
       // no overflow
       z.digits[z.len - i - 1] = c;
     } else {
-      // take 1 from the next...
+      // take 1 from the next digit in z
+      bool found_nonzero = false;
+      for (ssize_t j = i + 1; j < z.len; ++j) {
+        u32 d = z.digits[z.len - j - 1];
+        if (d != 0) {
+          found_nonzero = true;
+          z.digits[z.len - j - 1] = z.digits[z.len - j - 1] - 1;
+          // set everything that was tried before it to 1...1
+          for (ssize_t k = j - 1; k > i; --k) {
+            z.digits[z.len - k - 1] -= 1;
+          }
+          break;
+        }
+      }
+      if (found_nonzero) {
+        z.digits[z.len - i - 1] = c;
+      } else {
+        z.sign = false;
+      }
     }
   }
   return z;
