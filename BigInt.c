@@ -163,3 +163,18 @@ BigInt BigInt_sub(BigInt x, BigInt y) {
   }
   return z;
 }
+
+BigInt BigInt_shiftleft(BigInt x, ssize_t shift) {
+  BigInt y;
+  y.sign = x.sign;
+  y.len = x.len + ((shift + 31) / 32);
+  y.digits = malloc(y.len * sizeof(u32));
+  memset(y.digits, 0, y.len * sizeof(u32));
+  u32 inner_shift = shift % 32;
+  u32 between_shift = (shift + 31) / 32;
+  for (ssize_t i = 0; i < x.len - 1; ++i) {
+    y.digits[i + between_shift] = (x.digits[i] << inner_shift) + (x.digits[i + 1] >> (32 - inner_shift));
+  }
+  y.digits[between_shift + x.len - 1] = x.digits[x.len - 1] << inner_shift;
+  return y;
+}
