@@ -81,12 +81,12 @@ BigInt BigInt_add(BigInt x, BigInt y) {
     return BigInt_add(y, x);
   }
   BigInt z;
-  z.len = x.len;
+  z.len = x.len + 1;
   z.sign = x.sign; // equal to y's sign
   z.digits = malloc(z.len * sizeof(u32));
   memset(z.digits, 0, z.len * sizeof(u32));
   bool carry = false;
-  for (ssize_t i = z.len - 1; i >= 0; --i) {
+  for (ssize_t i = 0; i < z.len; ++i) {
     u32 a = x.digits[x.len - i - 1];
     if (i < y.len) {
       u32 b = y.digits[y.len - i - 1];
