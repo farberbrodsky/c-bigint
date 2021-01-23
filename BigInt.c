@@ -318,6 +318,8 @@ bool BigInt_div(BigInt x, BigInt y, BigInt *quotient, BigInt *remainder) {
 
   BigInt Q;
   Q.sign = x.sign == y.sign;
+  x.sign = true;
+  y.sign = true;
   Q.len = x.len;
   Q.digits = calloc(Q.len, sizeof(u32));
   BigInt R = BigInt_zero();
@@ -354,6 +356,7 @@ bool BigInt_div(BigInt x, BigInt y, BigInt *quotient, BigInt *remainder) {
   }
   if (remainder != NULL) {
     BigInt_shrink(&R);
+    R.sign = Q.sign;
     *remainder = R;
   } else {
     BigInt_free(R);
