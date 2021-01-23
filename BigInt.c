@@ -60,44 +60,27 @@ BigInt BigInt_add(BigInt x, BigInt y) {
   z.digits = malloc(z.len * sizeof(u32));
   memset(z.digits, 0, z.len * sizeof(u32));
   bool carry = false;
-  for (ssize_t i = x.len - 1; i >= 0; --i) {
+  for (ssize_t i = z.len - 1; i >= 0; --i) {
     u32 a = x.digits[x.len - i - 1];
     if (i < y.len) {
-      u32 b = y.digits[x.len - i - 1];
-      for (u32 current_digit = 1; current_digit != 1 << 31; current_digit <<= 1) {
-        u32 digit_a = a & current_digit;
-        u32 digit_b = b & current_digit;
-        bool both = digit_a && digit_b;
-        bool only_one = (digit_a && !digit_b) || (digit_b && !digit_a);
-        if (carry) {
-          if (both) {
-            z.digits[z.len - i - 1] |= current_digit;
-            carry = false;
-          } else if (only_one) {
-            carry = true;
-          } else {
-            z.digits[z.len - i - 1] |= current_digit;
-            carry = false;
-          }
-        } else {
-          if (both) {
-            carry = true;
-          } else if (only_one) {
-            z.digits[z.len - i - 1] |= current_digit;
-          }
-        }
+      u32 b = y.digits[y.len - i - 1];
+      u32 c = a + b + carry;
+      if (c <= a) {
+        // overflowed
+        carry = true;
+      } else {
+        carry = false;
       }
+      z.digits[z.len - i - 1] = c;
     } else {
-      for (u32 current_digit = 1; current_digit != 1 << 31; current_digit <<= 1) {
-        u32 digit_a = a & current_digit;
-        if (carry) {
-          if (!digit_a) {
-            z.digits[z.len - i - 1] |= current_digit;
-          }
-        } else if (digit_a) {
-          z.digits[z.len - i - 1] |= current_digit;
-        }
+      u32 b = a + carry;
+      if (b == 0) {
+        // overflowed
+        carry = true;
+      } else {
+        carry = false;
       }
+      z.digits[z.len - i - 1] = b;
     }
   }
   return z;
