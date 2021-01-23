@@ -156,6 +156,7 @@ BigInt BigInt_sub(BigInt x, BigInt y) {
       if (found_nonzero) {
         z.digits[z.len - i - 1] = c;
       } else {
+        z.digits[z.len - i - 1] = -c;
         z.sign = false;
       }
     }
