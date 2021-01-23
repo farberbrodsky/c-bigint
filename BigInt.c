@@ -62,7 +62,7 @@ BigInt BigInt_one() {
 }
 
 char *BigInt_to_binary_string(BigInt x) {
-  char *result = malloc(x.len * 32 + 1);
+  char *result = malloc(x.len * 32 + 2);
   char *current_char = result;
   if (!x.sign) {
     *(current_char++) = '-';
@@ -86,6 +86,46 @@ char *BigInt_to_binary_string(BigInt x) {
   }
   *current_char = '\0';
   return result;
+}
+
+char *BigInt_to_decimal_string(BigInt x) {
+  BigInt ten;
+  ten.sign = true;
+  ten.len = 1;
+  ten.digits = malloc(sizeof(u32));
+  ten.digits[0] = 10;
+  char *result = malloc(x.len * 10 + 2);
+  char *current_char = result;
+  ssize_t len = 0;
+  bool sign = x.sign;
+  x.sign = true;
+  BigInt Q;
+  BigInt R;
+
+  BigInt_div(x, ten, &Q, &R);
+  *(current_char++) = '0' + R.digits[0];
+  ++len;
+  while (!BigInt_is_zero(Q)) {
+    BigInt_div(Q, ten, &Q, &R);
+    *(current_char++) = '0' + R.digits[0];
+    ++len;
+  }
+
+  if (!sign) {
+    *(current_char++) = '-';
+    ++len;
+  }
+
+  // reverse string
+  char *reversed_result = malloc(len + 1);
+  for (ssize_t i = 0; i < len; ++i) {
+    reversed_result[i] = result[len - i - 1];
+  }
+  reversed_result[len] = '\0';
+
+  BigInt_free(ten);
+  free(result);
+  return reversed_result;
 }
 
 BigInt BigInt_from_binary_string(char *s) {
