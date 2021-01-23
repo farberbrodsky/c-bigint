@@ -35,6 +35,32 @@ BigInt BigInt_clone(BigInt x) {
   return y;
 }
 
+bool BigInt_is_zero(BigInt x) {
+  for (int i = 0; i < x.len; i++) {
+    if (x.digits[i] != 0) {
+      return false;
+    }
+  }
+  return true;
+}
+
+BigInt BigInt_zero() {
+  BigInt x;
+  x.sign = true;
+  x.len = 1;
+  x.digits = calloc(1, sizeof(u32));
+  return x;
+}
+
+BigInt BigInt_one() {
+  BigInt x;
+  x.sign = true;
+  x.len = 1;
+  x.digits = malloc(sizeof(u32));
+  x.digits[0] = 1;
+  return x;
+}
+
 char *BigInt_to_binary_string(BigInt x) {
   char *result = malloc(x.len * 32 + 1);
   char *current_char = result;
@@ -61,6 +87,7 @@ char *BigInt_to_binary_string(BigInt x) {
   *current_char = '\0';
   return result;
 }
+
 BigInt BigInt_from_binary_string(char *s) {
   BigInt x;
   x.sign = true;
@@ -192,6 +219,7 @@ BigInt BigInt_shiftleft(BigInt x, ssize_t shift) {
     y.digits[i + between_shift] = (x.digits[i] << inner_shift) + (x.digits[i + 1] >> (32 - inner_shift));
   }
   y.digits[between_shift + x.len - 1] = x.digits[x.len - 1] << inner_shift;
+  BigInt_shrink(&y);
   return y;
 }
 
@@ -217,4 +245,118 @@ BigInt BigInt_mul(BigInt x, BigInt y) {
   }
   BigInt_shrink(&z);
   return z;
+}
+
+bool BigInt_greater(BigInt x, BigInt y) {
+  if (BigInt_is_zero(x)) {
+    x.sign = true;
+  }
+  if (BigInt_is_zero(y)) {
+    y.sign = true;
+  }
+  if (x.sign && !y.sign) {
+    return true;
+  } else if (y.sign && !x.sign) {
+    return false;
+  }
+  // both signs are equal
+  bool sign = x.sign;
+  ssize_t first_index_x = 0;
+  while (first_index_x < x.len && x.digits[first_index_x] == 0) ++first_index_x;
+  ssize_t first_index_y = 0;
+  while (first_index_y < y.len && y.digits[first_index_y] == 0) ++first_index_y;
+  ssize_t real_x_len = x.len - first_index_x;
+  ssize_t real_y_len = y.len - first_index_y;
+  if (real_x_len > real_y_len) {
+    return sign;
+  } else if (real_x_len < real_y_len) {
+    return !sign;
+  }
+  // lexical comparison
+  for (ssize_t i = 0; i < real_x_len; ++i) {
+    if ((sign && (x.digits[i] > y.digits[i])) || (!sign && (x.digits[i] < y.digits[i]))) {
+      return true;
+    } else if ((sign && (x.digits[i] < y.digits[i])) || (!sign && (x.digits[i] > y.digits[i]))) {
+      return false;
+    }
+  }
+  return false;
+}
+
+bool BigInt_equal(BigInt x, BigInt y) {
+  bool x_zero = BigInt_is_zero(x);
+  bool y_zero = BigInt_is_zero(y);
+  if ((x_zero && !y_zero) || (!x_zero && y_zero)) {
+    return false;
+  } else if (x_zero && y_zero) {
+    return true;
+  }
+
+  ssize_t first_index_x = 0;
+  while (first_index_x < x.len && x.digits[first_index_x] == 0) ++first_index_x;
+  ssize_t first_index_y = 0;
+  while (first_index_y < y.len && y.digits[first_index_y] == 0) ++first_index_y;
+  ssize_t real_x_len = x.len - first_index_x;
+  ssize_t real_y_len = y.len - first_index_y;
+  if (real_x_len != real_y_len) {
+    return false;
+  }
+  // compare each digit
+  for (ssize_t i = 0; i < real_x_len; i++) {
+    if (x.digits[i] != y.digits[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool BigInt_div(BigInt x, BigInt y, BigInt *quotient, BigInt *remainder) {
+  // puts the quotient and the remainder in the pointers. can also be set to null. returns success value.
+  if (BigInt_is_zero(y)) {
+    return false;
+  }
+
+  BigInt Q;
+  Q.sign = x.sign == y.sign;
+  Q.len = x.len;
+  Q.digits = calloc(Q.len, sizeof(u32));
+  BigInt R = BigInt_zero();
+
+  for (u32 i = x.len - 1; i < x.len; --i) {
+    for (u32 j = 31; j < 32; --j) {
+      u32 bits = 1 << j;
+      u32 bit_is_one = (x.digits[i] & bits) != 0;
+      // R := R << 1
+      BigInt next_remainder = BigInt_shiftleft(R, 1);
+      BigInt_free(R);
+      // R(0) := N(i)
+      next_remainder.digits[next_remainder.len - 1] |= bit_is_one;
+
+      BigInt sub = BigInt_sub(next_remainder, y);
+      if (sub.sign || BigInt_is_zero(sub)) {
+        // R := R - D
+        BigInt_free(next_remainder);
+        R = sub;
+        // Q(i) := 1
+        Q.digits[i] |= bits;
+      } else {
+        R = next_remainder;
+        BigInt_free(sub);
+      }
+    }
+  }
+
+  if (quotient != NULL) {
+    BigInt_shrink(&Q);
+    *quotient = Q;
+  } else {
+    BigInt_free(Q);
+  }
+  if (remainder != NULL) {
+    BigInt_shrink(&R);
+    *remainder = R;
+  } else {
+    BigInt_free(R);
+  }
+  return true;
 }

@@ -20,3 +20,6 @@ BigInt BigInt_add(BigInt, BigInt);
 BigInt BigInt_sub(BigInt, BigInt);
 BigInt BigInt_shiftleft(BigInt, ssize_t);
 BigInt BigInt_mul(BigInt, BigInt);
+bool BigInt_greater(BigInt, BigInt);
+bool BigInt_equal(BigInt, BigInt);
+bool BigInt_div(BigInt x, BigInt y, BigInt *quotient, BigInt *remainder);
